@@ -55,7 +55,7 @@ Here we are also overriding ```childValue()``` method so that the child threads 
 @AllArgsConstructor
 @Slf4j
 @Component
-public class TenantFilter implements HandlerInterceptor {
+public class HttpInterceptor implements HandlerInterceptor {
 
     private static final String TENANT_ID_HEADER = "X-Tenant";
 
@@ -111,7 +111,7 @@ Here, we shall use the same entity POJO ```Employee``` for all the tenants. But 
 public class AppConfig {
 
     public String getCollectionName(String collection) {
-        return TenantIdProvider.getCurrentTenant() + '_' + collection;
+        return collection + '_' + TenantIdProvider.getCurrentTenant();
     }
 }
 ```
@@ -134,9 +134,10 @@ public class Employee {
 
 In this scenario, the application connects to different databases based on the tenant. Database properties are defined in the application.yml file, allowing dynamic database switching at runtime.
 ```agsl
-multitenant:
-  mongo:
-    properties:
+multi-tenant:
+  mongos:
+    defaultTenant: tenant_a
+    tenantProperties:
       - tenant: tenant_a
         properties:
           uri: "mongodb://localhost:27017"
@@ -189,11 +190,14 @@ public class MultiTenantConfig {
             if (connectionUri != null)
                 client = MongoClients.create(connectionUri);
             else
-                throw new RuntimeException("config props missing");
+                throw new RuntimeException("db config props are missing");
 
             final String database = multiTenant.getProperties().getDatabase();
             final TenantMongoClient tenantMongoClient = new TenantMongoClient(client, database);
             this.multiTenantConfig.put(multiTenant.getTenant(), tenantMongoClient);
+            
+            if (multiTenant.getTenant().equals(mongoAppProperties.getDefaultTenant()))
+                multiTenantConfig.put("DEFAULT", tenantMongoClient);
         }
     }
 
