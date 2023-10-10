@@ -1,0 +1,14 @@
+multi-tenant:
+  mongos:
+    defaultTenant: tenant_a
+    tenantProperties:
+      - tenant: tenant_a
+        properties:
+          uri: "mongodb://localhost:27017"
+          database: tenant_a_db
+      - tenant: tenant_b
+        properties:
+          uri: "mongodb://localhost:27017"
+          database: tenant_b_db
+server:
+  port: 8080
